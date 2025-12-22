@@ -56,8 +56,8 @@ const LoginForm = () => {
 
   return (
     <div className="p-5 shadow rounded bg-white w-100" style={{ maxWidth: '400px' }}>
-      <h2 className="fw-bold mb-1">Welcome !</h2>
-      <p className="mb-4 text-muted">to the campus Portal.</p>
+      <h2 className="fw-bold mb-1">TimexThapar </h2>
+      <p className="mb-4 text-muted"></p>
 
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">

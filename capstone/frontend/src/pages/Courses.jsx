@@ -1,16 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTrash, FaEdit } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Courses = () => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+
+  const displayName = user?.first_name?.trim()
+    ? `${user.first_name} ${user.last_name || ''}`.trim()
+    : 'Admin';
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userRole');
+    if (logout) logout();
+    navigate('/');
+  };
   const [formData, setFormData] = useState({
     name: '',
     code: '',
     semester: '',
     department: '',
-    teacher: ''
+    teacher: '',
+    number_of_lectures: '',
+    number_of_labs: '',
+    credits: '',
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -53,7 +72,16 @@ const Courses = () => {
     })
       .then(() => {
         fetchCourses();
-        setFormData({ name: '', code: '', semester: '', department: '', teacher: '' });
+        setFormData({
+          name: '',
+          code: '',
+          semester: '',
+          department: '',
+          teacher: '',
+          number_of_lectures: '',
+          number_of_labs: '',
+          credits: '',
+        });
         setEditingId(null);
       })
       .catch(error => console.error('Error saving course:', error));
@@ -66,7 +94,10 @@ const Courses = () => {
       code: course.code,
       semester: course.semester,
       department: course.department,
-      teacher: course.teacher || ''
+      teacher: course.teacher || '',
+      number_of_lectures: course.number_of_lectures,
+      number_of_labs: course.number_of_labs,
+      credits: course.credits,
     });
     setEditingId(course.id);
   };
@@ -81,10 +112,40 @@ const Courses = () => {
 
   return (
     <div className="d-flex">
-      {/* Sidebar (unchanged) */}
+      {/* Sidebar */}
+      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
+        <h5 className="fw-bold mb-4 text-capitalize text-center">{displayName}</h5>
+        <ul className="nav flex-column text-center w-100 gap-3">
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard')}>
+              Dashboard
+            </button>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard#profile-settings')}>
+              Profile Settings
+            </button>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={handleLogout}>
+              Logout
+            </button>
+          </li>
+        </ul>
+      </div>
 
+      {/* Main Content */}
       <div className="flex-grow-1 p-4" style={{ backgroundColor: '#fdfae4', minHeight: '100vh' }}>
-        <h4 className="fw-bold">Welcome <span className="text-danger">Sakshi</span>!</h4>
+        <div className="d-flex align-items-center gap-3 mb-3">
+          <button
+            onClick={() => navigate('/admin-dashboard')}
+            className="btn btn-link p-0"
+            style={{ border: 'none', padding: '0', background: 'none' }}
+          >
+            <img src="/back-arrow.svg" alt="Back" style={{ width: '32px', height: '32px' }} />
+          </button>
+          <h4 className="fw-bold mb-0">Welcome <span className="text-danger"></span>!</h4>
+        </div>
         <p className="text-muted mb-4">Stay Organised , Stay Ahead</p>
 
         <h3 className="fw-bold mb-3">Courses</h3>
@@ -98,6 +159,9 @@ const Courses = () => {
               <th>Semester</th>
               <th>Department</th>
               <th>Teacher</th>
+              <th>No. of Lectures</th>
+              <th>No. of Labs</th>
+              <th>Credits</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -109,6 +173,9 @@ const Courses = () => {
                 <td>{course.semester}</td>
                 <td>{course.department}</td>
                 <td>{course.teacher_name || '—'}</td>
+                <td>{course.number_of_lectures || 0}</td>
+                <td>{course.number_of_labs || 0}</td>
+                <td>{course.credits || 0}</td>
                 <td>
                   <FaEdit onClick={() => handleEdit(course)} className="me-3 text-primary" style={{ cursor: 'pointer' }} />
                   <FaTrash onClick={() => handleDelete(course.id)} className="text-danger" style={{ cursor: 'pointer' }} />
@@ -147,6 +214,21 @@ const Courses = () => {
                 ))}
               </select>
             </div>
+
+            {/* New Fields */}
+            <div className="col-md-2">
+              <label className="form-label">No. of Lectures</label>
+              <input type="number" className="form-control" name="number_of_lectures" value={formData.number_of_lectures} onChange={handleChange} />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label">No. of Labs</label>
+              <input type="number" className="form-control" name="number_of_labs" value={formData.number_of_labs} onChange={handleChange} />
+            </div>
+            <div className="col-md-2">
+              <label className="form-label">Credits</label>
+              <input type="number" className="form-control" name="credits" value={formData.credits} onChange={handleChange} />
+            </div>
+
             <div className="col-md-2 d-grid">
               <button className={`btn ${editingId ? 'btn-primary' : 'btn-danger'}`} onClick={handleSubmit}>
                 {editingId ? 'Update' : 'Add Course'}

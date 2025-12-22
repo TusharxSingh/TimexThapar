@@ -4,6 +4,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
     user_info,
+    change_pin,
+    update_profile,
     generate_timetable,
     TeacherViewSet,
     CourseViewSet,
@@ -24,6 +26,8 @@ urlpatterns = [
     path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user-info/', user_info, name='user_info'),
+    path('profile/', update_profile, name='update_profile'),
+    path('change-pin/', change_pin, name='change_pin'),
     path('generate-timetable/', generate_timetable, name='generate_timetable'),
     path('', include(router.urls)),
     path('timetable/save/', save_timetable, name='save_timetable'),

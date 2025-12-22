@@ -9,6 +9,10 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    pin = models.CharField(max_length=10, blank=True, null=True)
+    roll_number = models.CharField(max_length=30, blank=True, null=True)
+    branch = models.CharField(max_length=100, blank=True, null=True)
+    year_of_study = models.PositiveSmallIntegerField(blank=True, null=True)
     
 class Teacher(models.Model):
     prefix = models.CharField(max_length=10, blank=True, null=True)

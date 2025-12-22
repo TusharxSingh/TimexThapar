@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const GenerateTimeTable = () => {
   const [teachers, setTeachers] = useState([]);
@@ -13,6 +14,19 @@ const GenerateTimeTable = () => {
 
   const accessToken = localStorage.getItem("accessToken");
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const displayName = user?.first_name?.trim()
+    ? `${user.first_name} ${user.last_name || ''}`.trim()
+    : 'Admin';
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userRole');
+    if (logout) logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     if (!accessToken) {
@@ -79,23 +93,46 @@ const GenerateTimeTable = () => {
   return (
     <div className="d-flex">
       {/* Sidebar */}
-      <div className="bg-danger text-white p-4 d-flex flex-column align-items-center" style={{ width: '250px', minHeight: '100vh' }}>
-        <img src="/defaulticon.png" alt="profile" className="rounded-circle mb-2" />
-        <h5 className="mb-4">admin</h5>
-        <ul className="list-unstyled w-100">
-          <li className="mb-3"><a href="#" className="text-white text-decoration-none">Dashboard</a></li>
-          <li className="mb-3"><a href="#" className="text-white text-decoration-none">About</a></li>
-          <li className="mb-3"><a href="#" className="text-white text-decoration-none">Profile Setting</a></li>
-          <li className="mb-3"><a href="#" className="text-white text-decoration-none">Change Pin</a></li>
-          <li className="nav-item py-2">
-            <button onClick={() => navigate('/')} className="btn btn-link nav-link text-white p-0">Logout</button>
+      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
+        <h5 className="fw-bold text-capitalize mb-2">{displayName}</h5>
+
+        <ul className="nav flex-column text-center w-100 mt-4 gap-3">
+          <li className="nav-item">
+            <button
+              className="nav-link text-white btn btn-link p-0 w-100"
+              onClick={() => navigate('/admin-dashboard')}
+            >
+              Dashboard
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className="nav-link text-white btn btn-link p-0 w-100"
+              onClick={() => navigate('/admin-dashboard#profile-settings')}
+            >
+              Profile Settings
+            </button>
+          </li>
+          <li className="nav-item">
+            <button onClick={handleLogout} className="btn btn-link nav-link text-white p-0 w-100">
+              Logout
+            </button>
           </li>
         </ul>
       </div>
 
       {/* Main Content */}
       <div className="flex-grow-1 p-5" style={{ backgroundColor: '#fdfde0' }}>
-        <h4 className="fw-bold">Welcome Sakshi !</h4>
+        <div className="d-flex align-items-center gap-3 mb-3">
+          <button
+            onClick={() => navigate('/admin-dashboard')}
+            className="btn btn-link p-0"
+            style={{ border: 'none', padding: '0', background: 'none' }}
+          >
+            <img src="/back-arrow.svg" alt="Back" style={{ width: '32px', height: '32px' }} />
+          </button>
+          <h4 className="fw-bold mb-0">Welcome, <span className="text-danger">{displayName}</span>!</h4>
+        </div>
         <p className="text-muted">Stay Organised , Stay Ahead</p>
 
         <h2 className="fw-bold mt-4">Generate Timetable</h2>

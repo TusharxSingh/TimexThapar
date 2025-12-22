@@ -8,47 +8,37 @@ const WelcomeCards = () => {
   // Determine role from user object (assuming `user.role` is set)
   const userType = user?.role === 'teacher' ? 'teacher' : 'student';
 
-  const cardData = userType === 'teacher'
-    ? [
-        {
-          title: 'Your Timetable',
-          text: 'Check your daily and weekly schedule based on your subgroup.',
-          link: '/timetable',
-          icon: 'bi-calendar-week'
-        },
-        {
-          title: 'Faculty Availability',
-          text: 'Check available slots of other teachers for meetings.',
-          link: '/faculty-availability',
-          icon: 'bi-person-lines-fill'
-        },
-        {
-          title: 'Classroom Availability',
-          text: 'Check available rooms for extra classes and meetings.',
-          link: '/classrooms',
-          icon: 'bi-geo-alt-fill'
-        }
-      ]
-    : [
-        {
-          title: 'Your Timetable',
-          text: 'Check your daily and weekly schedule based on your subgroup.',
-          link: '/timetable',
-          icon: 'bi-calendar-week'
-        },
-        {
-          title: 'Find Your Teacher',
-          text: 'Need to meet a teacher? Check their free slots and cabin location.',
-          link: '/teacher-availability',
-          icon: 'bi-person-lines-fill'
-        },
-        {
-          title: 'Lab Locator',
-          text: 'Need to meet a teacher? Check their free slots and cabin location.',
-          link: '/labs',
-          icon: 'bi-geo-alt-fill'
-        }
-      ];
+  const teacherCards = [
+    {
+      title: 'Faculty Availability',
+      text: 'Check available slots of other teachers for meetings.',
+      link: '/faculty-availability',
+      icon: 'bi-person-lines-fill'
+    },
+    {
+      title: 'Classroom Availability',
+      text: 'Check available rooms for extra classes and meetings.',
+      link: '/classrooms',
+      icon: 'bi-geo-alt-fill'
+    }
+  ];
+
+  const studentCards = [
+    {
+      title: 'Find Your Teacher',
+      text: 'Need to meet a teacher? Check their free slots and cabin location.',
+      link: '/teacher-availability',
+      icon: 'bi-person-lines-fill'
+    },
+    {
+      title: 'Change PIN',
+      text: 'Keep your account secure by updating your PIN regularly.',
+      link: '/student-dashboard#profile-settings',
+      icon: 'bi-key-fill'
+    }
+  ];
+
+  const cardData = userType === 'teacher' ? teacherCards : studentCards;
 
   return (
     <div className="container mt-4">

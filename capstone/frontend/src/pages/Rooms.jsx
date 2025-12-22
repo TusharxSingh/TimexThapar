@@ -77,6 +77,11 @@ function Rooms() {
     }
   };
   const { user, logout } = useAuth();
+  
+  const displayName = user?.first_name?.trim()
+    ? `${user.first_name} ${user.last_name || ''}`.trim()
+    : 'Admin';
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -86,33 +91,41 @@ function Rooms() {
   };
 
   return (
-    <div className="container-fluid" style={{ minHeight: '100vh' }}>
-      <div className="row">
-        {/* Sidebar */}
-        <div
-          className="col-md-2 d-flex flex-column align-items-center text-white py-4"
-          style={{ backgroundColor: '#A10000', minHeight: '100vh' }}
-        >
-          <img
-            src="\defaulticon.png"
-            alt="profile"
-            className="rounded-circle mb-3"
-            style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-          />
-          <h5 className="text-white">admin</h5>
-          <hr className="bg-white w-100" />
-          <nav className="nav flex-column w-100 text-center">
-            <a href="#" className="nav-link text-white">Dashboard</a>
-            <a href="#" className="nav-link text-white">About</a>
-            <a href="#" className="nav-link text-white">Profile Setting</a>
-            <a href="#" className="nav-link text-white">Change Pin</a>
-            <a href="#" onClick={handleLogout} className="nav-link text-white mt-3">Logout</a>
-          </nav>
-        </div>
+    <div className="d-flex" style={{ minHeight: '100vh' }}>
+      {/* Sidebar */}
+      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px' }}>
+        <h5 className="fw-bold mb-4 text-capitalize">{displayName}</h5>
+        <ul className="nav flex-column text-center w-100 gap-3">
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard')}>
+              Dashboard
+            </button>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard#profile-settings')}>
+              Profile Settings
+            </button>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={handleLogout}>
+              Logout
+            </button>
+          </li>
+        </ul>
+      </div>
 
-        {/* Main Content */}
-        <div className="col-md-10 p-5" style={{ backgroundColor: '#fdfbe6' }}>
-          <h4 className="fw-bold">Welcome Sakshi !</h4>
+      {/* Main Content */}
+      <div className="flex-grow-1 p-5" style={{ backgroundColor: '#fdfbe6' }}>
+        <div className="d-flex align-items-center gap-3 mb-3">
+          <button
+            onClick={() => navigate('/admin-dashboard')}
+            className="btn btn-link p-0"
+            style={{ border: 'none', padding: '0', background: 'none' }}
+          >
+            <img src="/back-arrow.svg" alt="Back" style={{ width: '32px', height: '32px' }} />
+          </button>
+          <h4 className="fw-bold mb-0">Welcome, <span className="text-danger">{displayName}</span>!</h4>
+        </div>
           <p className="mb-4">Stay Organised , Stay Ahead</p>
 
           <h2 className="fw-bold mb-3">Rooms</h2>
@@ -154,7 +167,6 @@ function Rooms() {
           <Button variant="danger" onClick={() => handleShowModal()} className="mt-3">
             Add Rooms
           </Button>
-        </div>
       </div>
 
       {/* Modal for Add/Edit Room */}

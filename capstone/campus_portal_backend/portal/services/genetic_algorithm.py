@@ -331,4 +331,4 @@ def format_result_for_display(timetable, courses, teachers, rooms, timeslots):
 def post_timetable_to_django_api(formatted_result):
     url = "http://localhost:8000/api/timetable/save/"
     response = requests.post(url, json=formatted_result)
-    print("✅ Response:", response.json())
+    print("Response:", response.json())
