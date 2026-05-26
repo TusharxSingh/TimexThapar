@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import API_URL from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,7 +46,7 @@ const TeacherTimetable = () => {
     setStatus({ type: '', message: '' });
 
     try {
-      const teachersRes = await axios.get('http://localhost:8000/api/teachers/', {
+      const teachersRes = await axios.get(`${API_URL}/api/teachers/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -67,7 +68,7 @@ const TeacherTimetable = () => {
       }
 
       const timetableRes = await axios.get(
-        `http://localhost:8000/api/timetable/?teacher_id=${match.id}`,
+        `${API_URL}/api/timetable/?teacher_id=${match.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

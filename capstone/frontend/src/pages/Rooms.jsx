@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
+import API_URL from '../config';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +27,7 @@ function Rooms() {
 
   const fetchRooms = () => {
     axios
-      .get('http://localhost:8000/api/rooms/', authHeaders)
+      .get(`${API_URL}/api/rooms/`, authHeaders)
       .then(res => setRooms(res.data))
       .catch(err => console.error(err));
   };
@@ -57,8 +58,8 @@ function Rooms() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const request = editMode
-      ? axios.put(`http://localhost:8000/api/rooms/${currentRoom.id}/`, currentRoom, authHeaders)
-      : axios.post('http://localhost:8000/api/rooms/', currentRoom, authHeaders);
+      ? axios.put(`${API_URL}/api/rooms/${currentRoom.id}/`, currentRoom, authHeaders)
+      : axios.post(`${API_URL}/api/rooms/`, currentRoom, authHeaders);
 
     request
       .then(() => {
@@ -71,7 +72,7 @@ function Rooms() {
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this room?')) {
       axios
-        .delete(`http://localhost:8000/api/rooms/${id}/`, authHeaders)
+        .delete(`${API_URL}/api/rooms/${id}/`, authHeaders)
         .then(fetchRooms)
         .catch(console.error);
     }

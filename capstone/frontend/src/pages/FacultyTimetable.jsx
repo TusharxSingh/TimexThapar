@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import API_URL from "../config";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -32,7 +33,7 @@ const FacultyTimetable = () => {
   ];
 
   useEffect(() => {
-    axios.get("http://localhost:8000/api/teachers/", {
+    axios.get(`${API_URL}/api/teachers/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -42,7 +43,7 @@ const FacultyTimetable = () => {
   }, [token]);
 
   const handleSubmit = () => {
-    axios.get(`http://localhost:8000/api/timetable/?teacher_id=${selectedTeacher}`, {
+    axios.get(`${API_URL}/api/timetable/?teacher_id=${selectedTeacher}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

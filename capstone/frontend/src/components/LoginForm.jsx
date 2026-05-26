@@ -3,6 +3,7 @@ import { Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const LoginForm = () => {
     const { username, password, role } = formData;
 
     try {
-      const response = await axios.post('http://localhost:8000/api/login/', {
+      const response = await axios.post(`${API_URL}/api/login/`, {
         username,
         password,
       });
@@ -32,7 +33,7 @@ const LoginForm = () => {
       localStorage.setItem('refreshToken', response.data.refresh);
       localStorage.setItem('userRole', role.toLowerCase());
 
-      const userInfoRes = await axios.get('http://localhost:8000/api/user-info/', {
+      const userInfoRes = await axios.get(`${API_URL}/api/user-info/`, {
         headers: {
           Authorization: `Bearer ${response.data.access}`,
         },

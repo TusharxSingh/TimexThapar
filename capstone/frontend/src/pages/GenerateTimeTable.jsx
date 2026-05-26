@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../config";
 import { useAuth } from "../context/AuthContext";
 
 const GenerateTimeTable = () => {
@@ -38,13 +39,13 @@ const GenerateTimeTable = () => {
     const fetchData = async () => {
       try {
         const [teachersRes, coursesRes, timeslotRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/teachers/", {
+          axios.get(`${API_URL}/api/teachers/`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           }),
-          axios.get("http://localhost:8000/api/courses/", {
+          axios.get(`${API_URL}/api/courses/`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           }),
-          axios.get("http://localhost:8000/api/timeslots/", {
+          axios.get(`${API_URL}/api/timeslots/`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           }),
         ]);
@@ -72,7 +73,7 @@ const GenerateTimeTable = () => {
     setLoading(true);
     axios
       .post(
-        "http://localhost:8000/api/generate-timetable/",
+        `${API_URL}/api/generate-timetable/`,
         { max_hours_per_day: maxHours },
         {
           headers: { Authorization: `Bearer ${accessToken}` },

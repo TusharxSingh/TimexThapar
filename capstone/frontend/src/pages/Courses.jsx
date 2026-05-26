@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTrash, FaEdit } from 'react-icons/fa';
+import API_URL from '../config';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -41,7 +42,7 @@ const Courses = () => {
   }, []);
 
   const fetchCourses = () => {
-    axios.get('http://localhost:8000/api/courses/', {
+    axios.get(`${API_URL}/api/courses/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => setCourses(response.data))
@@ -49,7 +50,7 @@ const Courses = () => {
   };
 
   const fetchTeachers = () => {
-    axios.get('http://localhost:8000/api/teachers/', {
+    axios.get(`${API_URL}/api/teachers/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => setTeachers(response.data))
@@ -63,8 +64,8 @@ const Courses = () => {
 
   const handleSubmit = () => {
     const url = editingId
-      ? `http://localhost:8000/api/courses/${editingId}/`
-      : 'http://localhost:8000/api/courses/';
+      ? `${API_URL}/api/courses/${editingId}/`
+      : `${API_URL}/api/courses/`;
     const method = editingId ? 'put' : 'post';
 
     axios[method](url, formData, {
@@ -103,7 +104,7 @@ const Courses = () => {
   };
 
   const handleDelete = (id) => {
-    axios.delete(`http://localhost:8000/api/courses/${id}/`, {
+    axios.delete(`${API_URL}/api/courses/${id}/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(() => fetchCourses())

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import API_URL from '../config';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -107,7 +108,7 @@ const TeacherDashboard = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const response = await axios.post(
-        'http://localhost:8000/api/profile/',
+        `${API_URL}/api/profile/`,
         {
           first_name: profileForm.firstName,
           last_name: profileForm.lastName,
@@ -158,7 +159,7 @@ const TeacherDashboard = () => {
     try {
       const token = localStorage.getItem('accessToken');
       await axios.post(
-        'http://localhost:8000/api/change-pin/',
+        `${API_URL}/api/change-pin/`,
         {
           current_pin: pinForm.currentPin,
           new_pin: pinForm.newPin,
@@ -198,7 +199,7 @@ const TeacherDashboard = () => {
     setTimetableStatus({ type: '', message: '' });
 
     try {
-      const teachersRes = await axios.get('http://localhost:8000/api/teachers/', {
+      const teachersRes = await axios.get(`${API_URL}/api/teachers/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -220,7 +221,7 @@ const TeacherDashboard = () => {
       }
 
       const timetableRes = await axios.get(
-        `http://localhost:8000/api/timetable/?teacher_id=${match.id}`,
+        `${API_URL}/api/timetable/?teacher_id=${match.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

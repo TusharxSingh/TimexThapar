@@ -1,3 +1,4 @@
+import os
 import random
 from collections import defaultdict
 from datetime import datetime, time, timedelta
@@ -329,6 +330,7 @@ def format_result_for_display(timetable, courses, teachers, rooms, timeslots):
 
 # --- POST TO DJANGO ---
 def post_timetable_to_django_api(formatted_result):
-    url = "http://localhost:8000/api/timetable/save/"
+    base = os.environ.get("SELF_BASE_URL", "http://localhost:8000")
+    url = f"{base}/api/timetable/save/"
     response = requests.post(url, json=formatted_result)
     print("Response:", response.json())

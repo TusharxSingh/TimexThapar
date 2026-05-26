@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 const StudentDashboard = () => {
   const { user, logout, setUser } = useAuth(); // get user + logout from context
@@ -88,7 +89,7 @@ const StudentDashboard = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const response = await axios.post(
-        'http://localhost:8000/api/profile/',
+        `${API_URL}/api/profile/`,
         {
           first_name: profileForm.firstName,
           last_name: profileForm.lastName,
@@ -143,7 +144,7 @@ const StudentDashboard = () => {
     try {
       const token = localStorage.getItem('accessToken');
       await axios.post(
-        'http://localhost:8000/api/change-pin/',
+        `${API_URL}/api/change-pin/`,
         {
           current_pin: pinForm.currentPin,
           new_pin: pinForm.newPin,

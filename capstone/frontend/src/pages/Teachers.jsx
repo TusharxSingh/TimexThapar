@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
+import API_URL from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,7 +33,7 @@ const Teachers = () => {
 
   const fetchTeachers = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/teachers/', config);
+      const res = await axios.get(`${API_URL}/api/teachers/`, config);
       setTeachers(res.data);
     } catch (error) {
       console.error('Error fetching teachers:', error);
@@ -50,10 +51,10 @@ const Teachers = () => {
   const handleSubmit = async () => {
     try {
       if (editId) {
-        await axios.put(`http://localhost:8000/api/teachers/${editId}/`, newTeacher, config);
+        await axios.put(`${API_URL}/api/teachers/${editId}/`, newTeacher, config);
         setEditId(null);
       } else {
-        await axios.post('http://localhost:8000/api/teachers/', newTeacher, config);
+        await axios.post(`${API_URL}/api/teachers/`, newTeacher, config);
       }
       setNewTeacher({ prefix: '', first_name: '', last_name: '', designation: '', email: '' });
       setShowForm(false);
@@ -71,7 +72,7 @@ const Teachers = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/api/teachers/${id}/`, config);
+      await axios.delete(`${API_URL}/api/teachers/${id}/`, config);
       fetchTeachers();
     } catch (error) {
       console.error('Error deleting teacher:', error);
