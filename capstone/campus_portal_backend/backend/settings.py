@@ -11,15 +11,19 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(","
 AUTH_USER_MODEL = 'portal.CustomUser'
 ROOT_URLCONF = 'backend.urls'
 
+_db_url = os.environ.get(
+    "DATABASE_URL",
+    "mysql://root:Tushar%40102119064@localhost:3306/campus_portal"
+)
+_db_url = _db_url.split("?")[0]
+
 DATABASES = {
-    "default": dj_database_url.parse(
-        os.environ.get(
-            "DATABASE_URL",
-            "mysql://root:Tushar%40102119064@localhost:3306/campus_portal"
-        ),
-        conn_max_age=600,
-    )
+    "default": dj_database_url.parse(_db_url, conn_max_age=600)
 }
+
+if os.environ.get("DATABASE_URL"):
+    DATABASES["default"]["OPTIONS"] = {"ssl": {"ca": None}}
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
