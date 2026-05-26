@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaCalendarAlt, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
+import AdminSidebar from '../components/AdminSidebar';
+import useDisplayName from '../hooks/useDisplayName';
 
 const AdminDashboard = () => {
-  const { user, logout, setUser } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const displayName = useDisplayName('Admin');
 
   const [activeSection, setActiveSection] = useState('dashboard');
 
@@ -33,14 +35,6 @@ const AdminDashboard = () => {
   const [pinStatus, setPinStatus] = useState({ type: '', message: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    if (logout) logout();
-    navigate('/');
-  };
 
   const handleTeachersRedirect = () => {
     navigate('/Teachers');
@@ -161,43 +155,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const displayName = user?.first_name?.trim()
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : 'Admin';
-
   return (
     <div className="d-flex">
-      {/* Sidebar */}
-      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
-        <h5 className="fw-bold text-capitalize mb-2">{displayName}</h5>
-
-        <ul className="nav flex-column text-center w-100 mt-4 gap-3">
-          <li className="nav-item">
-            <button
-              className={`nav-link text-white btn btn-link p-0 w-100 ${activeSection === 'dashboard' ? 'fw-bold text-decoration-underline' : ''}`}
-              onClick={() => {
-                setActiveSection('dashboard');
-                navigate('/admin-dashboard');
-              }}
-            >
-              Dashboard
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link text-white btn btn-link p-0 w-100 ${activeSection === 'profile' ? 'fw-bold text-decoration-underline' : ''}`}
-              onClick={() => setActiveSection('profile')}
-            >
-              Profile Settings
-            </button>
-          </li>
-          <li className="nav-item">
-            <button onClick={handleLogout} className="btn btn-link nav-link text-white p-0 w-100">
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
+      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
 
       {/* Main Content */}
       <div className="flex-grow-1 bg-light p-5">

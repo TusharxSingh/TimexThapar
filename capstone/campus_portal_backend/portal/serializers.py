@@ -4,7 +4,7 @@ from .models import CustomUser, Teacher, Course, Room, Day, TimeSlot, TimetableE
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = '__all__'
+        fields = ['id', 'username', 'role', 'first_name', 'last_name', 'roll_number', 'branch', 'year_of_study']
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,22 +9,70 @@ import Teachers from "../pages/Teachers";
 import Courses from "../pages/Courses";
 import Rooms from "../pages/Rooms";
 import GenerateTimeTable from "../pages/GenerateTimeTable";
-import FacultyTimetable from '../pages/FacultyTimetable';
+import FacultyTimetable from "../pages/FacultyTimetable";
+import NotFound from "../pages/NotFound";
+import ProtectedRoute from "../components/ProtectedRoute";
+
 const AppRoutes = () => (
   <Router>
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/student-dashboard" element={<StudentDashboard />} />
-      <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-      <Route path="/teacher-timetable" element={<TeacherTimetable />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/teachers" element={<Teachers />} />
-      <Route path="/courses" element={<Courses />} />
-      <Route path="/rooms" element={<Rooms />} />
-      <Route path="/generatetimetable" element={<GenerateTimeTable />} />
-      <Route path="/faculty-timetable" element={<FacultyTimetable />} />
 
+      <Route path="/student-dashboard" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <StudentDashboard />
+        </ProtectedRoute>
+      } />
 
+      <Route path="/teacher-dashboard" element={
+        <ProtectedRoute allowedRoles={['teacher']}>
+          <TeacherDashboard />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/teacher-timetable" element={
+        <ProtectedRoute allowedRoles={['teacher']}>
+          <TeacherTimetable />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin-dashboard" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/teachers" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Teachers />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/courses" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Courses />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/rooms" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Rooms />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/generatetimetable" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <GenerateTimeTable />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/faculty-timetable" element={
+        <ProtectedRoute allowedRoles={['student', 'teacher']}>
+          <FacultyTimetable />
+        </ProtectedRoute>
+      } />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </Router>
 );

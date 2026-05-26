@@ -4,15 +4,20 @@ import { FaEdit, FaTrash } from 'react-icons/fa';
 import API_URL from '../config';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import AdminSidebar from '../components/AdminSidebar';
+import useDisplayName from '../hooks/useDisplayName';
 
 function Rooms() {
+  const displayName = useDisplayName('Admin');
   const [rooms, setRooms] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [currentRoom, setCurrentRoom] = useState({ name: '', capacity: '', type: '', available: true });
 
-  const navigate = useNavigate(); // 👈 React Router hook for navigation
+  const navigate = useNavigate();
 
   const token = localStorage.getItem('accessToken');
   const authHeaders = {
@@ -26,11 +31,19 @@ function Rooms() {
   }, []);
 
   const fetchRooms = () => {
+    setIsLoading(true);
     axios
       .get(`${API_URL}/api/rooms/`, authHeaders)
       .then(res => setRooms(res.data))
-      .catch(err => console.error(err));
+      .catch(err => console.error(err))
+      .finally(() => setIsLoading(false));
   };
+
+  const filteredRooms = rooms.filter((r) => {
+    const matchesSearch = r.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !typeFilter || r.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
 
   const handleShowModal = (room = null) => {
     if (room) {
@@ -77,43 +90,10 @@ function Rooms() {
         .catch(console.error);
     }
   };
-  const { user, logout } = useAuth();
-  
-  const displayName = user?.first_name?.trim()
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : 'Admin';
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    if (logout) logout();
-    navigate('/');
-  };
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh' }}>
-      {/* Sidebar */}
-      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px' }}>
-        <h5 className="fw-bold mb-4 text-capitalize">{displayName}</h5>
-        <ul className="nav flex-column text-center w-100 gap-3">
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard')}>
-              Dashboard
-            </button>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard#profile-settings')}>
-              Profile Settings
-            </button>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={handleLogout}>
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
+      <AdminSidebar />
 
       {/* Main Content */}
       <div className="flex-grow-1 p-5" style={{ backgroundColor: '#fdfbe6' }}>
@@ -130,40 +110,80 @@ function Rooms() {
           <p className="mb-4">Stay Organised , Stay Ahead</p>
 
           <h2 className="fw-bold mb-3">Rooms</h2>
-          <p className="text-muted">Existing Rooms</p>
-          <table className="table table-bordered">
-            <thead className="table-light">
-              <tr>
-                <th>Room Name</th>
-                <th>Capacity</th>
-                <th>Type</th>
-                <th>Available</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.map((room) => (
-                <tr key={room.id}>
-                  <td>{room.name}</td>
-                  <td>{room.capacity}</td>
-                  <td>{room.type}</td>
-                  <td>{room.available ? 'Yes' : 'No'}</td>
-                  <td>
-                    <FaEdit
-                      className="text-primary me-2"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => handleShowModal(room)}
-                    />
-                    <FaTrash
-                      className="text-danger"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => handleDelete(room.id)}
-                    />
-                  </td>
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <p className="text-muted mb-0">Existing Rooms</p>
+            <div className="d-flex gap-2 flex-wrap">
+              <select
+                className="form-select form-select-sm"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                style={{ maxWidth: '140px' }}
+              >
+                <option value="">All Types</option>
+                <option value="Lab">Lab</option>
+                <option value="Theatre">Theatre</option>
+              </select>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Search by name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ maxWidth: '240px' }}
+              />
+            </div>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-bordered">
+              <thead className="table-light">
+                <tr>
+                  <th>Room Name</th>
+                  <th>Capacity</th>
+                  <th>Type</th>
+                  <th>Available</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4">
+                      <div className="spinner-border text-danger" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredRooms.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4 text-muted">
+                      {searchTerm || typeFilter ? 'No rooms match your filters.' : 'No rooms yet. Add one below.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRooms.map((room) => (
+                    <tr key={room.id}>
+                      <td>{room.name}</td>
+                      <td>{room.capacity}</td>
+                      <td>{room.type}</td>
+                      <td>{room.available ? 'Yes' : 'No'}</td>
+                      <td>
+                        <FaEdit
+                          className="text-primary me-2"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleShowModal(room)}
+                        />
+                        <FaTrash
+                          className="text-danger"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleDelete(room.id)}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <Button variant="danger" onClick={() => handleShowModal()} className="mt-3">
             Add Rooms

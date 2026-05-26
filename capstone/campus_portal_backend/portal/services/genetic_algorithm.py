@@ -1,8 +1,6 @@
-import os
 import random
 from collections import defaultdict
 from datetime import datetime, time, timedelta
-import requests
 
 # GA Hyperparameters
 POPULATION_SIZE = 50
@@ -54,7 +52,7 @@ def generate_timetable(teachers, courses, rooms, timeslots, constraints):
 
     best = max(population, key=lambda ind: fitness(ind, courses, teachers, rooms, timeslots, max_hours, valid_timeslot_map))
     formatted_result = format_result_for_display(best, courses, teachers, rooms, timeslots)
-    post_timetable_to_django_api(formatted_result)
+    save_timetable_to_db(formatted_result)
     return formatted_result
 
 # --- TIMETABLE CREATION ---
@@ -328,9 +326,21 @@ def format_result_for_display(timetable, courses, teachers, rooms, timeslots):
     return formatted_result
 
 
-# --- POST TO DJANGO ---
-def post_timetable_to_django_api(formatted_result):
-    base = os.environ.get("SELF_BASE_URL", "http://localhost:8000")
-    url = f"{base}/api/timetable/save/"
-    response = requests.post(url, json=formatted_result)
-    print("Response:", response.json())
+def save_timetable_to_db(formatted_result):
+    from django.db import transaction
+    from portal.models import TimetableEntry
+
+    with transaction.atomic():
+        TimetableEntry.objects.all().delete()
+        entries = [
+            TimetableEntry(
+                subject=item["subject"],
+                type=item["type"],
+                room=item["room"],
+                day=item["day"],
+                time=item["time"],
+                teacher_id=item["teacher"],
+            )
+            for item in formatted_result
+        ]
+        TimetableEntry.objects.bulk_create(entries)

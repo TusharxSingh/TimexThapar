@@ -13,7 +13,7 @@ ROOT_URLCONF = 'backend.urls'
 
 _db_url = os.environ.get(
     "DATABASE_URL",
-    "mysql://root:Tushar%40102119064@localhost:3306/campus_portal"
+    "mysql://root@localhost:3306/campus_portal"
 )
 _db_url = _db_url.split("?")[0]
 

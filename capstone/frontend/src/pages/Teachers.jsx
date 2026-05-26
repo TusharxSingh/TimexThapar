@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import API_URL from '../config';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import AdminSidebar from '../components/AdminSidebar';
+import useDisplayName from '../hooks/useDisplayName';
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [newTeacher, setNewTeacher] = useState({
     prefix: '',
     first_name: '',
@@ -17,13 +20,9 @@ const Teachers = () => {
   });
   const [editId, setEditId] = useState(null);
 
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const accessToken = localStorage.getItem('accessToken');
-
-  const displayName = user?.first_name?.trim()
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : 'Admin';
+  const displayName = useDisplayName('Admin');
 
   const config = {
     headers: {
@@ -32,13 +31,26 @@ const Teachers = () => {
   };
 
   const fetchTeachers = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/teachers/`, config);
       setTeachers(res.data);
     } catch (error) {
       console.error('Error fetching teachers:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const filteredTeachers = teachers.filter((t) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      t.first_name?.toLowerCase().includes(q) ||
+      t.last_name?.toLowerCase().includes(q) ||
+      t.designation?.toLowerCase().includes(q) ||
+      t.email?.toLowerCase().includes(q)
+    );
+  });
 
   useEffect(() => {
     fetchTeachers();
@@ -71,6 +83,7 @@ const Teachers = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this teacher?')) return;
     try {
       await axios.delete(`${API_URL}/api/teachers/${id}/`, config);
       fetchTeachers();
@@ -79,37 +92,9 @@ const Teachers = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    if (logout) logout();
-    navigate('/');
-  };
-
   return (
     <div className="d-flex">
-      {/* Sidebar */}
-      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
-        <h5 className="fw-bold mb-4 text-capitalize">{displayName}</h5>
-        <ul className="nav flex-column text-center w-100 gap-3">
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard')}>
-              Dashboard
-            </button>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={() => navigate('/admin-dashboard#profile-settings')}>
-              Profile Settings
-            </button>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link text-white btn btn-link p-0 w-100" onClick={handleLogout}>
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
+      <AdminSidebar />
 
       {/* Main Content */}
       <div className="flex-grow-1 p-4" style={{ backgroundColor: '#f9f8e3' }}>
@@ -126,7 +111,17 @@ const Teachers = () => {
         <p className="text-muted">Stay Organised, Stay Ahead</p>
 
         <h2 className="fw-bold mt-4">Teachers</h2>
-        <p className="text-muted">Existing Teachers</p>
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <p className="text-muted mb-0">Existing Teachers</p>
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="Search by name, designation or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ maxWidth: '320px' }}
+          />
+        </div>
 
         <div className="table-responsive">
           <table className="table align-middle table-striped">
@@ -141,23 +136,39 @@ const Teachers = () => {
               </tr>
             </thead>
             <tbody>
-              {teachers.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.prefix}</td>
-                  <td>{t.first_name}</td>
-                  <td>{t.last_name}</td>
-                  <td>{t.designation}</td>
-                  <td className="text-truncate" style={{ maxWidth: '200px' }}>{t.email}</td>
-                  <td>
-                    <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => handleEdit(t)}>
-                      <FaEdit />
-                    </button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={() => handleDelete(t.id)}>
-                      <FaTrash />
-                    </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-4">
+                    <div className="spinner-border text-danger" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : filteredTeachers.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-4 text-muted">
+                    {searchTerm ? 'No teachers match your search.' : 'No teachers yet. Add one below.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredTeachers.map((t) => (
+                  <tr key={t.id}>
+                    <td>{t.prefix}</td>
+                    <td>{t.first_name}</td>
+                    <td>{t.last_name}</td>
+                    <td>{t.designation}</td>
+                    <td className="text-truncate" style={{ maxWidth: '200px' }}>{t.email}</td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => handleEdit(t)}>
+                        <FaEdit />
+                      </button>
+                      <button className="btn btn-sm btn-outline-secondary" onClick={() => handleDelete(t.id)}>
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

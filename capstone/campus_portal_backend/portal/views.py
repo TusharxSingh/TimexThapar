@@ -1,13 +1,19 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from django.contrib.auth.hashers import check_password
+from django.db import transaction
 
 from .models import Teacher, Course, Room, TimeSlot, TimetableEntry
 from .serializers import TeacherSerializer, CourseSerializer, RoomSerializer, TimeSlotSerializer, TimetableEntrySerializer
 
 from portal.services.genetic_algorithm import generate_timetable as ga_generate_timetable
+
+
+class IsAdminRole(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'admin'
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -53,10 +59,8 @@ def change_pin(request):
     if check_password(new_pin, user.password):
         return Response({"detail": "New PIN must be different from the current PIN."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Update both the login password (hashed) and the optional plain PIN field
     user.set_password(new_pin)
-    user.pin = new_pin
-    user.save(update_fields=["password", "pin"])
+    user.save(update_fields=["password"])
 
     return Response({"message": "PIN updated successfully."}, status=status.HTTP_200_OK)
 
@@ -154,40 +158,35 @@ class TimeSlotViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 @api_view(["POST"])
+@permission_classes([IsAdminRole])
 def save_timetable(request):
-    """
-    Delete old timetable and save new one.
-    Expected: JSON list of entries [{subject, type, room, day, time, teacher}]
-    """
-    TimetableEntry.objects.all().delete()
     serializer = TimetableEntrySerializer(data=request.data, many=True)
     if serializer.is_valid():
-        serializer.save()
+        with transaction.atomic():
+            TimetableEntry.objects.all().delete()
+            serializer.save()
         return Response({"message": "Timetable saved successfully."})
-    else:
-        print("Serializer errors:", serializer.errors)
-        return Response(serializer.errors, status=400)
+    return Response(serializer.errors, status=400)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_timetable(request):
     teacher_id = request.query_params.get('teacher_id', None)
 
     if not teacher_id:
         return Response({"error": "Teacher id is required."}, status=400)
 
-    # Filter timetable entries by teacher's name
     timetable = TimetableEntry.objects.filter(teacher=teacher_id)
-    
+
     if not timetable.exists():
         return Response({"error": "No timetable entries found for this teacher."}, status=404)
-    print("Timetable Entries:", timetable)
-    
+
     serializer = TimetableEntrySerializer(timetable, many=True)
     return Response(serializer.data)
 
 
-
 @api_view(["DELETE"])
+@permission_classes([IsAdminRole])
 def delete_timetable(request):
     TimetableEntry.objects.all().delete()
     return Response({"message": "Timetable deleted successfully."})

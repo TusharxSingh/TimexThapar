@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../config";
-import { useAuth } from "../context/AuthContext";
+import AdminSidebar from "../components/AdminSidebar";
+import useDisplayName from "../hooks/useDisplayName";
 
 const GenerateTimeTable = () => {
   const [teachers, setTeachers] = useState([]);
@@ -10,32 +11,15 @@ const GenerateTimeTable = () => {
   const [timeslot, setTimeslots] = useState([]);
   const [maxHours, setMaxHours] = useState(6);
   const [timetable, setTimetable] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
 
   const accessToken = localStorage.getItem("accessToken");
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-
-  const displayName = user?.first_name?.trim()
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : 'Admin';
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    if (logout) logout();
-    navigate('/');
-  };
+  const displayName = useDisplayName('Admin');
 
   useEffect(() => {
-    if (!accessToken) {
-      setError("No access token found!");
-      navigate("/login");
-      return;
-    }
-
     const fetchData = async () => {
       try {
         const [teachersRes, coursesRes, timeslotRes] = await Promise.all([
@@ -55,14 +39,9 @@ const GenerateTimeTable = () => {
         setTimeslots(timeslotRes.data || []);
       } catch (err) {
         console.error("Failed to fetch data:", err);
-        if (err.response?.status === 401) {
-          setError("Unauthorized: Please log in again.");
-          navigate("/login");
-        } else {
-          setError("An error occurred while fetching data.");
-        }
+        setError("An error occurred while fetching data.");
       } finally {
-        setLoading(false);
+        setIsInitialLoading(false);
       }
     };
 
@@ -70,7 +49,8 @@ const GenerateTimeTable = () => {
   }, [accessToken, navigate]);
 
   const handleGenerate = () => {
-    setLoading(true);
+    setIsGenerating(true);
+    setError("");
     axios
       .post(
         `${API_URL}/api/generate-timetable/`,
@@ -86,41 +66,12 @@ const GenerateTimeTable = () => {
         console.error("Failed to generate timetable", err);
         setError("Failed to generate timetable. Please try again.");
       })
-      .finally(() => setLoading(false));
+      .finally(() => setIsGenerating(false));
   };
-
-  if (loading) return <div className="text-center my-5">Loading...</div>;
 
   return (
     <div className="d-flex">
-      {/* Sidebar */}
-      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
-        <h5 className="fw-bold text-capitalize mb-2">{displayName}</h5>
-
-        <ul className="nav flex-column text-center w-100 mt-4 gap-3">
-          <li className="nav-item">
-            <button
-              className="nav-link text-white btn btn-link p-0 w-100"
-              onClick={() => navigate('/admin-dashboard')}
-            >
-              Dashboard
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className="nav-link text-white btn btn-link p-0 w-100"
-              onClick={() => navigate('/admin-dashboard#profile-settings')}
-            >
-              Profile Settings
-            </button>
-          </li>
-          <li className="nav-item">
-            <button onClick={handleLogout} className="btn btn-link nav-link text-white p-0 w-100">
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
+      <AdminSidebar />
 
       {/* Main Content */}
       <div className="flex-grow-1 p-5" style={{ backgroundColor: '#fdfde0' }}>
@@ -157,24 +108,42 @@ const GenerateTimeTable = () => {
         <button
           onClick={handleGenerate}
           className="btn btn-danger mb-4"
+          disabled={isGenerating || isInitialLoading}
         >
-          Generate Timetable
+          {isGenerating ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Generating...
+            </>
+          ) : (
+            'Generate Timetable'
+          )}
         </button>
 
         {/* Show Teachers List */}
         <div className="mt-4">
           <h3 className="fw-semibold mb-3">Teachers</h3>
-          <ul className="list-group">
-            {(teachers || []).map((t, i) => (
-              <li key={i} className="list-group-item bg-white border rounded shadow-sm">
-                <strong>{t.first_name} {t.last_name}</strong> -{" "}
-                {courses
-                  .filter((c) => c.teacher === t.id)
-                  .map((c) => c.name)
-                  .join(", ")}
-              </li>
-            ))}
-          </ul>
+          {isInitialLoading ? (
+            <div className="text-center py-3">
+              <div className="spinner-border text-danger" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : teachers.length === 0 ? (
+            <p className="text-muted">No teachers found. Add teachers first.</p>
+          ) : (
+            <ul className="list-group">
+              {teachers.map((t, i) => (
+                <li key={i} className="list-group-item bg-white border rounded shadow-sm">
+                  <strong>{t.first_name} {t.last_name}</strong> -{" "}
+                  {courses
+                    .filter((c) => c.teacher === t.id)
+                    .map((c) => c.name)
+                    .join(", ") || <span className="text-muted">No subjects assigned</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Generated Timetable */}

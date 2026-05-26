@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "bootstrap/dist/css/bootstrap.min.css";
 import API_URL from "../config";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { days, periods, periodLabels, formatTimetableData } from "../constants/timetable";
 
 const FacultyTimetable = () => {
   const navigate = useNavigate();
@@ -11,26 +11,15 @@ const FacultyTimetable = () => {
   const [teacherList, setTeacherList] = useState([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [timetable, setTimetable] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const token = localStorage.getItem("accessToken");
-  
+
   const getBackRoute = () => {
     const role = user?.role || localStorage.getItem('userRole');
     if (role === 'teacher') return '/teacher-dashboard';
     return '/student-dashboard';
   };
-
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-  const periods = [
-    "08:00 - 08:50", "08:50 - 09:40", "09:40 - 10:30", "10:30 - 11:20",
-    "11:20 - 12:10", "12:10 - 13:00", "13:00 - 13:50", "13:50 - 14:40",
-    "14:40 - 15:30", "15:30 - 16:20", "16:20 - 17:10"
-  ];
-
-  const periodLabels = [
-    "1 (8:00–8:50)", "2 (8:50–9:40)", "3 (9:40–10:30)", "4 (10:30–11:20)",
-    "5 (11:20–12:10)", "6 (12:10–1:00)", "7 (1:00–1:50)", "8 (1:50–2:40)",
-    "9 (2:40–3:30)", "10 (3:30–4:20)", "11 (4:20–5:10)"
-  ];
 
   useEffect(() => {
     axios.get(`${API_URL}/api/teachers/`, {
@@ -43,48 +32,27 @@ const FacultyTimetable = () => {
   }, [token]);
 
   const handleSubmit = () => {
+    if (!selectedTeacher) return;
+    setIsLoading(true);
+    setHasSearched(true);
     axios.get(`${API_URL}/api/timetable/?teacher_id=${selectedTeacher}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
     .then(res => {
-      const data = res.data;
-      const formattedTimetable = {};
-
-      days.forEach(day => {
-        formattedTimetable[day] = Array(periods.length).fill(null);
-      });
-
-      data.forEach(entry => {
-        const { day, time, subject, type, room } = entry;
-        if (!day || !time) return;
-
-        const [start, end] = time.split(" - ");
-        const startIndex = periods.findIndex(p => p.startsWith(start.trim()));
-        const endIndex = periods.findIndex(p => p.endsWith(end.trim()));
-        let span = 1;
-
-        if (startIndex !== -1 && endIndex !== -1 && endIndex >= startIndex) {
-          span = endIndex - startIndex + 1;
-
-          formattedTimetable[day][startIndex] = {
-            text: `${subject} (${type}) [Room ${room}]`,
-            span: span
-          };
-
-          for (let i = 1; i < span; i++) {
-            formattedTimetable[day][startIndex + i] = "SKIP";
-          }
-        } else {
-          console.warn(`⚠️ Invalid period mapping for: ${time}`);
-        }
-      });
-
-      setTimetable(formattedTimetable);
+      setTimetable(formatTimetableData(res.data || []));
     })
-    .catch(err => console.error("Error fetching timetable:", err));
+    .catch(err => {
+      console.error("Error fetching timetable:", err);
+      setTimetable({});
+    })
+    .finally(() => setIsLoading(false));
   };
+
+  const hasEntries = Object.values(timetable).some(
+    (row) => Array.isArray(row) && row.some((cell) => cell && typeof cell === 'object')
+  );
 
   return (
     <div className="container my-5">
@@ -121,44 +89,60 @@ const FacultyTimetable = () => {
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="table table-bordered table-striped text-center">
-          <thead className="table-danger">
-            <tr>
-              <th>Periods / Days</th>
-              {periodLabels.map((label, idx) => (
-                <th key={idx}>{label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((day) => (
-              <tr key={day}>
-                <th>{day}</th>
-                {(() => {
-                  const cells = [];
-                  for (let i = 0; i < periods.length; i++) {
-                    const entry = timetable[day]?.[i];
-                    if (entry === "SKIP") continue;
+      {isLoading && (
+        <div className="text-center my-5">
+          <div className="spinner-border text-danger" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      )}
 
-                    if (entry && typeof entry === "object") {
-                      cells.push(
-                        <td key={i} colSpan={entry.span}>
-                          {entry.text}
-                        </td>
-                      );
-                      i += entry.span - 1;
-                    } else {
-                      cells.push(<td key={i}></td>);
-                    }
-                  }
-                  return cells;
-                })()}
+      {!isLoading && hasSearched && !hasEntries && (
+        <div className="alert alert-warning text-center">
+          No timetable entries found for this teacher.
+        </div>
+      )}
+
+      {!isLoading && hasEntries && (
+        <div className="table-responsive shadow-sm">
+          <table className="table table-bordered table-striped text-center mb-0">
+            <thead className="table-danger">
+              <tr>
+                <th style={{ minWidth: '120px' }}>Periods / Days</th>
+                {periodLabels.map((label, idx) => (
+                  <th key={idx} style={{ minWidth: '110px' }}>{label}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {days.map((day) => (
+                <tr key={day}>
+                  <th>{day}</th>
+                  {(() => {
+                    const cells = [];
+                    for (let i = 0; i < periods.length; i++) {
+                      const entry = timetable[day]?.[i];
+                      if (entry === "SKIP") continue;
+
+                      if (entry && typeof entry === "object") {
+                        cells.push(
+                          <td key={i} colSpan={entry.span}>
+                            {entry.text}
+                          </td>
+                        );
+                        i += entry.span - 1;
+                      } else {
+                        cells.push(<td key={i}></td>);
+                      }
+                    }
+                    return cells;
+                  })()}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

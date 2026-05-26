@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config';
+import UserSidebar from '../components/UserSidebar';
+import useDisplayName from '../hooks/useDisplayName';
 
 const StudentDashboard = () => {
-  const { user, logout, setUser } = useAuth(); // get user + logout from context
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const displayName = useDisplayName();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [profileForm, setProfileForm] = useState({
     firstName: user?.first_name || '',
@@ -37,8 +39,6 @@ const StudentDashboard = () => {
     });
   }, [user?.first_name, user?.last_name, user?.roll_number, user?.branch, user?.year_of_study]);
 
-  const displayName = user?.first_name?.trim() ? user.first_name : (user?.username || 'User');
-
   useEffect(() => {
     if (location.hash === '#profile-settings') {
       setActiveSection('profile');
@@ -46,19 +46,6 @@ const StudentDashboard = () => {
       setActiveSection('dashboard');
     }
   }, [location.hash]);
-
-  const handleLogout = () => {
-    // Clear tokens from localStorage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-
-    // Clear auth context if using it
-    if (logout) logout(); // optional, based on your context
-
-    // Navigate to login page
-    navigate('/');
-  };
 
   const handleProfileInput = (event) => {
     const { name, value } = event.target;
@@ -172,39 +159,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="d-flex">
-      {/* Sidebar */}
-      <div className="bg-danger text-white d-flex flex-column align-items-center p-4" style={{ width: '260px', minHeight: '100vh' }}>
-        
-        <h5 className="fw-bold mb-4">{displayName}</h5>
-        
-
-        <ul className="nav flex-column w-100 text-center gap-3">
-          <li className="nav-item">
-            <button
-              className={`nav-link text-white btn btn-link p-0 w-100 ${activeSection === 'dashboard' ? 'fw-bold text-decoration-underline' : ''}`}
-              onClick={() => setActiveSection('dashboard')}
-            >
-              Dashboard
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link text-white btn btn-link p-0 w-100 ${activeSection === 'profile' ? 'fw-bold text-decoration-underline' : ''}`}
-              onClick={() => setActiveSection('profile')}
-            >
-              Profile Settings
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              onClick={handleLogout}
-              className="nav-link text-white btn btn-link p-0 w-100"
-            >
-              Logout
-            </button>
-          </li>
-        </ul>
-      </div>
+      <UserSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
 
       {/* Main Content */}
       <div className="flex-grow-1 bg-light p-5">
