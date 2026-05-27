@@ -124,11 +124,16 @@ const Users = () => {
     }
   };
 
-  const handleDelete = async (id, username) => {
-    if (!window.confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+  const handleDelete = async (id, username, role) => {
+    const extra = role === 'teacher'
+      ? '\n\nThis will also delete their teacher profile, courses, and any timetable entries.'
+      : '';
+    if (!window.confirm(`Delete user "${username}"?${extra}\n\nThis cannot be undone.`)) return;
     try {
       await axios.delete(`${API_URL}/api/users/${id}/`, config);
+      setStatus({ type: 'success', message: `Deleted user "${username}".` });
       fetchUsers();
+      fetchTeachers();
     } catch (err) {
       const msg = err.response?.data?.detail || 'Failed to delete user.';
       setStatus({ type: 'error', message: msg });
@@ -345,7 +350,7 @@ const Users = () => {
                           </span>
                         ) : (
                           <FaTrash
-                            onClick={() => handleDelete(u.id, u.username)}
+                            onClick={() => handleDelete(u.id, u.username, u.role)}
                             className="text-danger"
                             style={{ cursor: 'pointer' }}
                           />
