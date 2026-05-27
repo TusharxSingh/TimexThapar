@@ -61,7 +61,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         if user.role == 'teacher':
             if teacher is None:
-                # Auto-create a Teacher profile so the timetable code can match
+                # First try to find an existing unlinked Teacher with matching name
+                # so we don't create a duplicate row.
+                first = (user.first_name or '').strip()
+                last = (user.last_name or '').strip()
+                if first:
+                    qs = Teacher.objects.filter(user__isnull=True, first_name__iexact=first)
+                    if last:
+                        teacher = qs.filter(last_name__iexact=last).first() or qs.first()
+                    else:
+                        teacher = qs.first()
+
+            if teacher is None:
+                # No matching teacher found, auto-create a new one
                 teacher = Teacher.objects.create(
                     first_name=user.first_name or user.username,
                     last_name=user.last_name or '',
@@ -73,9 +85,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 class TeacherSerializer(serializers.ModelSerializer):
+    linked_username = serializers.SerializerMethodField()
+
     class Meta:
         model = Teacher
         fields = '__all__'
+
+    def get_linked_username(self, obj):
+        return obj.user.username if obj.user_id else None
 
 class CourseSerializer(serializers.ModelSerializer):
     teacher_name = serializers.SerializerMethodField()

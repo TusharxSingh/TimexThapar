@@ -132,13 +132,14 @@ const Teachers = () => {
                 <th>Last Name</th>
                 <th>Designation</th>
                 <th style={{ minWidth: '200px' }}>Email</th>
+                <th>Linked Login</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4">
+                  <td colSpan="7" className="text-center py-4">
                     <div className="spinner-border text-danger" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
@@ -146,7 +147,7 @@ const Teachers = () => {
                 </tr>
               ) : filteredTeachers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                  <td colSpan="7" className="text-center py-4 text-muted">
                     {searchTerm ? 'No teachers match your search.' : 'No teachers yet. Add one below.'}
                   </td>
                 </tr>
@@ -158,6 +159,11 @@ const Teachers = () => {
                     <td>{t.last_name}</td>
                     <td>{t.designation}</td>
                     <td className="text-truncate" style={{ maxWidth: '200px' }}>{t.email}</td>
+                    <td>
+                      {t.linked_username
+                        ? <span className="badge bg-info text-dark">{t.linked_username}</span>
+                        : <span className="text-muted small">—</span>}
+                    </td>
                     <td>
                       <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => handleEdit(t)}>
                         <FaEdit />
