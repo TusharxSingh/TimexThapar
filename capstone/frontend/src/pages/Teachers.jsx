@@ -19,6 +19,7 @@ const Teachers = () => {
     email: '',
   });
   const [editId, setEditId] = useState(null);
+  const [status, setStatus] = useState({ type: '', message: '' });
 
   const navigate = useNavigate();
   const accessToken = localStorage.getItem('accessToken');
@@ -60,19 +61,37 @@ const Teachers = () => {
     setNewTeacher({ ...newTeacher, [e.target.name]: e.target.value });
   };
 
+  const extractError = (error, fallback) => {
+    const data = error.response?.data;
+    if (typeof data === 'string') return data;
+    if (data?.detail) return data.detail;
+    if (data && typeof data === 'object') {
+      const first = Object.values(data)[0];
+      return Array.isArray(first) ? first[0] : (first || fallback);
+    }
+    return fallback;
+  };
+
   const handleSubmit = async () => {
+    setStatus({ type: '', message: '' });
     try {
       if (editId) {
         await axios.put(`${API_URL}/api/teachers/${editId}/`, newTeacher, config);
+        setStatus({ type: 'success', message: 'Teacher updated.' });
         setEditId(null);
       } else {
         await axios.post(`${API_URL}/api/teachers/`, newTeacher, config);
+        setStatus({ type: 'success', message: 'Teacher added.' });
       }
       setNewTeacher({ prefix: '', first_name: '', last_name: '', designation: '', email: '' });
       setShowForm(false);
       fetchTeachers();
     } catch (error) {
       console.error('Error submitting teacher:', error);
+      setStatus({
+        type: 'error',
+        message: extractError(error, 'Failed to save teacher.'),
+      });
     }
   };
 
@@ -83,12 +102,21 @@ const Teachers = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this teacher?')) return;
+    const target = teachers.find((t) => t.id === id);
+    const label = target ? `${target.first_name} ${target.last_name}`.trim() : 'this teacher';
+    if (!window.confirm(`Delete ${label}? This will also delete their timetable entries and courses.`)) return;
+
+    setStatus({ type: '', message: '' });
     try {
       await axios.delete(`${API_URL}/api/teachers/${id}/`, config);
+      setStatus({ type: 'success', message: `Deleted ${label}.` });
       fetchTeachers();
     } catch (error) {
       console.error('Error deleting teacher:', error);
+      setStatus({
+        type: 'error',
+        message: extractError(error, `Could not delete ${label}. Check console for details.`),
+      });
     }
   };
 
@@ -111,6 +139,14 @@ const Teachers = () => {
         <p className="text-muted">Stay Organised, Stay Ahead</p>
 
         <h2 className="fw-bold mt-4">Teachers</h2>
+
+        {status.message && (
+          <div className={`alert ${status.type === 'error' ? 'alert-danger' : 'alert-success'} alert-dismissible fade show`}>
+            {status.message}
+            <button type="button" className="btn-close" onClick={() => setStatus({ type: '', message: '' })} />
+          </div>
+        )}
+
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <p className="text-muted mb-0">Existing Teachers</p>
           <input
