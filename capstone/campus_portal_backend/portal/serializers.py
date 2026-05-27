@@ -6,6 +6,35 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'username', 'role', 'first_name', 'last_name', 'roll_number', 'branch', 'year_of_study']
 
+
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=4)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'password', 'role', 'first_name', 'last_name',
+                  'roll_number', 'branch', 'year_of_study']
+
+    def validate_role(self, value):
+        if value not in ('teacher', 'student', 'admin'):
+            raise serializers.ValidationError("Role must be teacher, student, or admin.")
+        return value
+
+    def validate_username(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError("Username is required.")
+        if CustomUser.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Username already taken.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher

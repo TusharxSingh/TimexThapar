@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaCalendarAlt, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaCalendarAlt, FaUser, FaMapMarkerAlt, FaUserPlus } from 'react-icons/fa';
 import AdminSidebar from '../components/AdminSidebar';
 import useDisplayName from '../hooks/useDisplayName';
 
@@ -200,6 +200,18 @@ const AdminDashboard = () => {
                     <div className="fw-bold mb-3">Total Rooms</div>
                     <button onClick={handleRoomsRedirect} className="btn btn-danger btn-sm w-100">
                       Manage Rooms
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="card shadow h-100">
+                  <div className="card-body d-flex flex-column align-items-center text-center">
+                    <FaUserPlus size={30} className="mb-2 text-danger" />
+                    <div className="fw-bold mb-3">User Accounts</div>
+                    <button onClick={() => navigate('/users')} className="btn btn-danger btn-sm w-100">
+                      Manage Users
                     </button>
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import Courses from "../pages/Courses";
 import Rooms from "../pages/Rooms";
 import GenerateTimeTable from "../pages/GenerateTimeTable";
 import FacultyTimetable from "../pages/FacultyTimetable";
+import Users from "../pages/Users";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -45,6 +46,12 @@ const AppRoutes = () => (
       <Route path="/teachers" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Teachers />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/users" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Users />
         </ProtectedRoute>
       } />
 

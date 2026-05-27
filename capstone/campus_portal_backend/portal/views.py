@@ -5,8 +5,12 @@ from rest_framework import viewsets, status
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 
-from .models import Teacher, Course, Room, TimeSlot, TimetableEntry
-from .serializers import TeacherSerializer, CourseSerializer, RoomSerializer, TimeSlotSerializer, TimetableEntrySerializer
+from .models import Teacher, Course, Room, TimeSlot, TimetableEntry, CustomUser
+from .serializers import (
+    TeacherSerializer, CourseSerializer, RoomSerializer,
+    TimeSlotSerializer, TimetableEntrySerializer,
+    UserSerializer, UserCreateSerializer,
+)
 
 from portal.services.genetic_algorithm import generate_timetable as ga_generate_timetable
 
@@ -136,6 +140,34 @@ def generate_timetable(request):
     except Exception as e:
         print(f"\U0001F525 Error in generate_timetable: {e}")
         return Response({"error": str(e)}, status=500)
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Admin-only management of login accounts (teachers, students, admins)."""
+    queryset = CustomUser.objects.all().order_by('role', 'username')
+    permission_classes = [IsAdminRole]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UserCreateSerializer
+        return UserSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        role = self.request.query_params.get('role')
+        if role:
+            qs = qs.filter(role=role)
+        return qs
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.id == request.user.id:
+            return Response({"detail": "You cannot delete your own account."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if user.is_superuser:
+            return Response({"detail": "Cannot delete a superuser via the API."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)
+
 
 class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.all()

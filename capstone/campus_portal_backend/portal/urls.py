@@ -11,12 +11,14 @@ from .views import (
     CourseViewSet,
     RoomViewSet,
     TimeSlotViewSet,
+    UserViewSet,
     save_timetable,
     get_timetable,
     delete_timetable
 )
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'teachers', TeacherViewSet)
 router.register(r'courses', CourseViewSet)
 router.register(r'rooms', RoomViewSet)
