@@ -9,6 +9,12 @@ import useDisplayName from '../hooks/useDisplayName';
 const ROLES = [
   { value: 'teacher', label: 'Teacher' },
   { value: 'student', label: 'Student' },
+];
+
+// Used for filtering the user list (existing admins should still show)
+const ROLE_FILTERS = [
+  { value: 'teacher', label: 'Teacher' },
+  { value: 'student', label: 'Student' },
   { value: 'admin', label: 'Admin' },
 ];
 
@@ -264,7 +270,7 @@ const Users = () => {
               style={{ maxWidth: '160px' }}
             >
               <option value="">All Roles</option>
-              {ROLES.map((r) => (
+              {ROLE_FILTERS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
@@ -333,11 +339,17 @@ const Users = () => {
                         ) : '—'}
                       </td>
                       <td>
-                        <FaTrash
-                          onClick={() => handleDelete(u.id, u.username)}
-                          className="text-danger"
-                          style={{ cursor: 'pointer' }}
-                        />
+                        {u.role === 'admin' ? (
+                          <span className="text-muted small" title="Admin accounts are protected">
+                            Protected
+                          </span>
+                        ) : (
+                          <FaTrash
+                            onClick={() => handleDelete(u.id, u.username)}
+                            className="text-danger"
+                            style={{ cursor: 'pointer' }}
+                          />
+                        )}
                       </td>
                     </tr>
                   );

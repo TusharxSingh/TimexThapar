@@ -26,8 +26,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
                   'roll_number', 'branch', 'year_of_study', 'teacher_id']
 
     def validate_role(self, value):
-        if value not in ('teacher', 'student', 'admin'):
-            raise serializers.ValidationError("Role must be teacher, student, or admin.")
+        # Admin accounts must be created via Django's createsuperuser / admin site,
+        # not through the in-app Users page.
+        if value not in ('teacher', 'student'):
+            raise serializers.ValidationError(
+                "Role must be teacher or student. Admin accounts are managed via Django admin."
+            )
         return value
 
     def validate_username(self, value):

@@ -88,7 +88,7 @@ class TimetableEntry(models.Model):
     room = models.CharField(max_length=255)
     day = models.CharField(max_length=20)
     time = models.CharField(max_length=50)
-    teacher = models.ForeignKey(Teacher, null=True, on_delete=models.SET_NULL, db_column='teacher_id')
+    teacher = models.ForeignKey(Teacher, null=True, on_delete=models.CASCADE, db_column='teacher_id')
 
     def __str__(self):
         return f"{self.subject} - {self.day} {self.time}"

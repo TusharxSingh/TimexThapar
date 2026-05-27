@@ -168,6 +168,12 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return Response({"detail": "Cannot delete a superuser via the API."},
                             status=status.HTTP_400_BAD_REQUEST)
+        if user.role == 'admin':
+            return Response(
+                {"detail": "Admin accounts cannot be deleted through this page. "
+                           "Use the Django admin if you really need to remove one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().destroy(request, *args, **kwargs)
 
 
