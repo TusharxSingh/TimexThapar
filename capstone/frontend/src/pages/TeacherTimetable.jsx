@@ -14,47 +14,29 @@ const TeacherTimetable = () => {
 
   const fetchTimetable = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
-    if (!token || !user?.first_name) {
-      setStatus({ type: 'warning', message: 'Update your profile first to see the timetable.' });
+    if (!token) return;
+
+    if (!user?.teacher_id) {
       setTimetable(createEmptyTimetable());
+      setStatus({
+        type: 'warning',
+        message: 'Your account is not linked to a teacher profile yet. Ask an admin to link it.',
+      });
       return;
     }
-
-    const normalize = (value) => (value || '').trim().toLowerCase();
 
     setIsLoading(true);
     setStatus({ type: '', message: '' });
 
     try {
-      const teachersRes = await axios.get(`${API_URL}/api/teachers/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const teachers = teachersRes.data || [];
-      let match = teachers.find(
-        (t) =>
-          normalize(t.first_name) === normalize(user.first_name) &&
-          (!user.last_name?.trim() || normalize(t.last_name) === normalize(user.last_name))
-      );
-
-      if (!match) {
-        match = teachers.find((t) => normalize(t.first_name) === normalize(user.first_name));
-      }
-
-      if (!match) {
-        setTimetable(createEmptyTimetable());
-        setStatus({ type: 'warning', message: 'No teacher record matched your profile yet.' });
-        return;
-      }
-
-      const timetableRes = await axios.get(
-        `${API_URL}/api/timetable/?teacher_id=${match.id}`,
+      const { data } = await axios.get(
+        `${API_URL}/api/timetable/?teacher_id=${user.teacher_id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const data = timetableRes.data || [];
-      setTimetable(formatTimetableData(data));
-      if (!data.length) {
+      const entries = data || [];
+      setTimetable(formatTimetableData(entries));
+      if (!entries.length) {
         setStatus({ type: 'warning', message: 'No timetable entries saved for you yet.' });
       } else {
         setStatus({ type: 'success', message: 'Timetable loaded successfully.' });
@@ -66,15 +48,11 @@ const TeacherTimetable = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.first_name, user?.last_name]);
+  }, [user?.teacher_id]);
 
   useEffect(() => {
     fetchTimetable();
   }, [fetchTimetable]);
-
-  const displayName = user?.first_name?.trim()
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : (user?.username || 'Teacher');
 
   return (
     <div className="container py-5">

@@ -15,6 +15,13 @@ class CustomUser(AbstractUser):
     year_of_study = models.PositiveSmallIntegerField(blank=True, null=True)
     
 class Teacher(models.Model):
+    user = models.OneToOneField(
+        'CustomUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='teacher_profile',
+    )
     prefix = models.CharField(max_length=10, blank=True, null=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

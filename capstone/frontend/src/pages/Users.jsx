@@ -21,12 +21,14 @@ const emptyForm = {
   roll_number: '',
   branch: '',
   year_of_study: '',
+  teacher_id: '',
 };
 
 const Users = () => {
   const navigate = useNavigate();
   const displayName = useDisplayName('Admin');
   const [users, setUsers] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,9 +52,23 @@ const Users = () => {
     }
   };
 
+  const fetchTeachers = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/teachers/`, config);
+      setTeachers(res.data || []);
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchTeachers();
   }, []); // eslint-disable-line
+
+  // teachers without a linked user (available to link)
+  const unlinkedTeacherIds = new Set(users.filter((u) => u.teacher_id).map((u) => u.teacher_id));
+  const availableTeachers = teachers.filter((t) => !unlinkedTeacherIds.has(t.id));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,6 +90,7 @@ const Users = () => {
       if (payload.year_of_study === '') payload.year_of_study = null;
       if (payload.roll_number === '') payload.roll_number = null;
       if (payload.branch === '') payload.branch = null;
+      if (payload.teacher_id === '' || payload.role !== 'teacher') delete payload.teacher_id;
 
       await axios.post(`${API_URL}/api/users/`, payload, config);
       setStatus({
@@ -82,6 +99,7 @@ const Users = () => {
       });
       setFormData(emptyForm);
       fetchUsers();
+      fetchTeachers();
     } catch (err) {
       const data = err.response?.data || {};
       const firstError =
@@ -124,6 +142,8 @@ const Users = () => {
   });
 
   const isStudent = formData.role === 'student';
+  const isTeacher = formData.role === 'teacher';
+  const teacherById = Object.fromEntries(teachers.map((t) => [t.id, t]));
 
   return (
     <div className="d-flex">
@@ -179,6 +199,28 @@ const Users = () => {
                 <label className="form-label">Last Name</label>
                 <input type="text" className="form-control" name="last_name" value={formData.last_name} onChange={handleChange} />
               </div>
+
+              {isTeacher && (
+                <div className="col-md-6">
+                  <label className="form-label">Link to Teacher Profile</label>
+                  <select
+                    className="form-select"
+                    name="teacher_id"
+                    value={formData.teacher_id}
+                    onChange={handleChange}
+                  >
+                    <option value="">Auto-create new teacher profile</option>
+                    {availableTeachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.first_name} {t.last_name} {t.designation ? `- ${t.designation}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <small className="text-muted">
+                    Pick an existing teacher to link, or leave blank to auto-create one.
+                  </small>
+                </div>
+              )}
 
               {isStudent && (
                 <>
@@ -248,13 +290,14 @@ const Users = () => {
                 <th>Roll No.</th>
                 <th>Branch</th>
                 <th>Year</th>
+                <th>Linked Teacher</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-4">
+                  <td colSpan="9" className="text-center py-4">
                     <div className="spinner-border text-danger" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
@@ -262,41 +305,51 @@ const Users = () => {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-4 text-muted">
+                  <td colSpan="9" className="text-center py-4 text-muted">
                     {searchTerm || roleFilter ? 'No users match your filters.' : 'No users yet. Create one above.'}
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.username}</td>
-                    <td>
-                      <span className={`badge ${u.role === 'admin' ? 'bg-danger' : u.role === 'teacher' ? 'bg-primary' : 'bg-success'}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td>{u.first_name || '—'}</td>
-                    <td>{u.last_name || '—'}</td>
-                    <td>{u.roll_number || '—'}</td>
-                    <td>{u.branch || '—'}</td>
-                    <td>{u.year_of_study || '—'}</td>
-                    <td>
-                      <FaTrash
-                        onClick={() => handleDelete(u.id, u.username)}
-                        className="text-danger"
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                  </tr>
-                ))
+                filteredUsers.map((u) => {
+                  const linkedTeacher = u.teacher_id ? teacherById[u.teacher_id] : null;
+                  return (
+                    <tr key={u.id}>
+                      <td>{u.username}</td>
+                      <td>
+                        <span className={`badge ${u.role === 'admin' ? 'bg-danger' : u.role === 'teacher' ? 'bg-primary' : 'bg-success'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td>{u.first_name || '—'}</td>
+                      <td>{u.last_name || '—'}</td>
+                      <td>{u.roll_number || '—'}</td>
+                      <td>{u.branch || '—'}</td>
+                      <td>{u.year_of_study || '—'}</td>
+                      <td>
+                        {u.role === 'teacher' ? (
+                          linkedTeacher
+                            ? `${linkedTeacher.first_name} ${linkedTeacher.last_name}`
+                            : <span className="text-warning">Not linked</span>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        <FaTrash
+                          onClick={() => handleDelete(u.id, u.username)}
+                          className="text-danger"
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
         <div className="alert alert-info mt-3 mb-0 small">
-          <strong>Tip:</strong> For teachers to see their timetable, the user's First Name + Last Name must match
-          the Teacher record on the <button className="btn btn-link p-0 align-baseline" onClick={() => navigate('/teachers')}>Teachers page</button>.
+          <strong>Tip:</strong> Teacher accounts are now linked directly to a teacher profile.
+          When you create a teacher user, pick an existing teacher from the dropdown or leave it blank to auto-create one.
         </div>
       </div>
     </div>

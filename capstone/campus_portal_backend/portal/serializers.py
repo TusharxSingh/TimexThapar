@@ -2,18 +2,28 @@ from rest_framework import serializers
 from .models import CustomUser, Teacher, Course, Room, Day, TimeSlot, TimetableEntry
 
 class UserSerializer(serializers.ModelSerializer):
+    teacher_id = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'role', 'first_name', 'last_name', 'roll_number', 'branch', 'year_of_study']
+        fields = ['id', 'username', 'role', 'first_name', 'last_name',
+                  'roll_number', 'branch', 'year_of_study', 'teacher_id']
+
+    def get_teacher_id(self, obj):
+        profile = getattr(obj, 'teacher_profile', None)
+        return profile.id if profile else None
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=4)
+    teacher_id = serializers.PrimaryKeyRelatedField(
+        queryset=Teacher.objects.all(), write_only=True, required=False, allow_null=True,
+    )
 
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'password', 'role', 'first_name', 'last_name',
-                  'roll_number', 'branch', 'year_of_study']
+                  'roll_number', 'branch', 'year_of_study', 'teacher_id']
 
     def validate_role(self, value):
         if value not in ('teacher', 'student', 'admin'):
@@ -28,11 +38,34 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Username already taken.")
         return value
 
+    def validate(self, attrs):
+        teacher = attrs.get('teacher_id')
+        if teacher is not None and Teacher.objects.filter(user=teacher.user).exclude(pk=teacher.pk).exists():
+            pass
+        if teacher is not None and teacher.user_id is not None:
+            raise serializers.ValidationError({
+                "teacher_id": "That teacher is already linked to another user."
+            })
+        return attrs
+
     def create(self, validated_data):
         password = validated_data.pop('password')
+        teacher = validated_data.pop('teacher_id', None)
         user = CustomUser(**validated_data)
         user.set_password(password)
         user.save()
+
+        if user.role == 'teacher':
+            if teacher is None:
+                # Auto-create a Teacher profile so the timetable code can match
+                teacher = Teacher.objects.create(
+                    first_name=user.first_name or user.username,
+                    last_name=user.last_name or '',
+                    designation='',
+                )
+            teacher.user = user
+            teacher.save(update_fields=['user'])
+
         return user
 
 class TeacherSerializer(serializers.ModelSerializer):

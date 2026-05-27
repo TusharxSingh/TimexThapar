@@ -23,6 +23,7 @@ class IsAdminRole(BasePermission):
 @permission_classes([IsAuthenticated])
 def user_info(request):
     user = request.user
+    teacher_profile = getattr(user, 'teacher_profile', None)
     return Response({
         "username": user.username,
         "role": user.role,
@@ -31,6 +32,7 @@ def user_info(request):
         "roll_number": user.roll_number,
         "branch": user.branch,
         "year_of_study": user.year_of_study,
+        "teacher_id": teacher_profile.id if teacher_profile else None,
     })
 
 
